@@ -8,7 +8,7 @@ import ast
 
 # Folder where your Excel files are stored (same directory by default)
 INPUT_PATH = "./"        # Change if files are in another folder
-OUTPUT_FILE = "Top_25_Leads.xlsx"
+OUTPUT_FILE = "Top_300_Leads.xlsx"
 
 # ---------------------------
 # LOAD AND MERGE FILES
@@ -30,25 +30,20 @@ if not dataframes:
     raise ValueError("No Excel files found in folder!")
 
 merged = pd.concat(dataframes, ignore_index=True)
+required_columns = [
+    "Countries",
+    "Email",
+    "PhoneNumbers",
+    "JobCompanySize",
+]
+for column in required_columns:
+    if column not in merged.columns:
+        merged[column] = pd.NA
 print(f"\n✅ Merged {len(dataframes)} files with {len(merged)} total rows.\n")
 
 # ---------------------------
 # CLEAN AND NORMALIZE
 # ---------------------------
-
-# Keep only relevant columns (some may not exist in all files)
-columns_to_keep = [
-    "LinkedinUsername",
-    "LinkedinUrl",
-    "Email",
-    "PhoneNumbers",
-    "Countries",
-    "JobCompanySize",
-    "LastJobTitle",
-    "Source_File"
-]
-
-merged = merged[[c for c in columns_to_keep if c in merged.columns]].copy()
 
 # Normalize 'Countries' to count them properly
 def count_countries(value):
@@ -100,13 +95,22 @@ merged["TotalScore"] = (
 # RANK AND EXPORT
 # ---------------------------
 
-# Sort and get top 25
-top_25 = merged.sort_values(by="TotalScore", ascending=False).head(25)  # type: ignore[call-overload]
+# Sort and get top 300
+top_leads = merged.sort_values(by="TotalScore", ascending=False).head(300)  # type: ignore[call-overload]
 
 # Export
-top_25.to_excel(OUTPUT_FILE, index=False)
-print(f"✅ Exported Top 25 leads → {OUTPUT_FILE}")
+top_leads.to_excel(OUTPUT_FILE, index=False)
+print(f"✅ Exported Top 300 leads → {OUTPUT_FILE}")
 
 # Optional: display top 5 preview
 print("\n🔝 Top 5 Leads Preview:")
-print(top_25[["LinkedinUsername", "JobCompanySize", "Countries", "Email", "PhoneNumbers", "TotalScore"]].head())
+preview_columns = [
+    "LinkedinUsername",
+    "JobCompanySize",
+    "Countries",
+    "Email",
+    "PhoneNumbers",
+    "TotalScore",
+]
+available_preview_columns = [c for c in preview_columns if c in top_leads.columns]
+print(top_leads[available_preview_columns].head())
